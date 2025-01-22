@@ -10,20 +10,20 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-    e.preventDefault(); // Zapobiega domyślnemu zachowaniu formularza (przeładowanie strony)
+    e.preventDefault();
 
     try {
       const response = await fetch("http://localhost:5000/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }), // Wysyłamy dane użytkownika
+        body: JSON.stringify({ username, password }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem("token", data.access_token); // Zapisz token w localStorage
+        localStorage.setItem("token", data.access_token);
         console.log(data.access_token)
-        navigate("/cars"); // Przekierowanie na stronę samochodów
+        navigate("/cars");
       } else {
         alert("Nieprawidłowe dane logowania");
       }
@@ -60,13 +60,13 @@ const LoginPage = () => {
               <Field label="Username">
                 <Input
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)} // Aktualizacja stanu
+                  onChange={(e) => setUsername(e.target.value)}
                 />
               </Field>
               <Field label="Password">
                 <PasswordInput
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)} // Aktualizacja stanu
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </Field>
             </Stack>
@@ -74,12 +74,12 @@ const LoginPage = () => {
           <Card.Footer justifyContent="flex-end">
             <Button
               colorScheme="gray"
-              onClick={() => navigate("/")} // Anulowanie logowania
+              onClick={() => navigate("/")}
             >
               CANCEL
             </Button>
             <Button
-              type="submit" // Ważne! Wywoła `onSubmit` w formularzu
+              type="submit"
               variant="surface"
               colorPalette="teal"
             >
