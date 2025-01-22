@@ -25,11 +25,11 @@ const LoginPage = () => {
         console.log(data.access_token)
         navigate("/cars"); // Przekierowanie na stronę samochodów
       } else {
-        alert("Nieprawidłowe dane logowania");
+        alert("Invalid username or password");
       }
     } catch (error) {
       console.error("Błąd logowania:", error);
-      alert("Wystąpił błąd podczas logowania");
+      alert("An error occured ");
     }
   };
 

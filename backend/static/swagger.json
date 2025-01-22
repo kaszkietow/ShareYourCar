@@ -3,7 +3,7 @@
   "info": {
     "title": "Car API",
     "version": "1.0.0",
-    "description": "API do zarządzania samochodami i użytkownikami dane dla konta admin: admin hasło: kwa123"
+    "description": "API do zarządzania samochodami i użytkownikami. Dane dla konta admin: admin hasło: kwa123"
   },
   "servers": [
     {
@@ -389,6 +389,106 @@
           }
         }
       }
+    },
+    "/reservation": {
+      "post": {
+        "summary": "Utwórz rezerwację",
+        "operationId": "makeReservation",
+        "tags": ["Reservations"],
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "car_id": {
+                    "type": "integer",
+                    "description": "ID samochodu"
+                  },
+                  "reservation_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Data rezerwacji"
+                  },
+                  "return_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Data zwrotu"
+                  }
+                },
+                "required": ["car_id", "reservation_date", "return_date"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rezerwacja utworzona",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "reservation": {
+                      "$ref": "#/components/schemas/Reservation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błąd w żądaniu"
+          },
+          "500": {
+            "description": "Błąd serwera"
+          }
+        }
+      }
+    },
+    "/getreservation": {
+      "get": {
+        "summary": "Pobierz rezerwacje",
+        "operationId": "getReservations",
+        "tags": ["Reservations"],
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista rezerwacji",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reservations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Reservation"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Błąd serwera"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -474,6 +574,34 @@
           }
         },
         "required": ["username", "password"]
+      },
+      "Reservation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "ID rezerwacji"
+          },
+          "car_id": {
+            "type": "integer",
+            "description": "ID samochodu"
+          },
+          "user_id": {
+            "type": "integer",
+            "description": "ID użytkownika"
+          },
+          "reservation_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data rezerwacji"
+          },
+          "return_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data zwrotu"
+          }
+        },
+        "required": ["car_id", "user_id", "reservation_date", "return_date"]
       }
     }
   }
