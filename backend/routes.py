@@ -259,6 +259,30 @@ def get_current_user():
         return jsonify({"error": "Internal Server Error"}), 500
 
 
+def set_car_unavailable_later(car_id, delay):
+    def update_availability():
+        with app.app_context():
+            car = Car.query.get(car_id)
+            if car:
+                car.available = "false"
+                db.session.commit()
+                print(f"Car ID {car_id} is now unavailable.")
+    timer = threading.Timer(delay, update_availability)
+    timer.start()
+
+
+def set_car_available_later(car_id, delay):
+    def update_availability():
+        with app.app_context():
+            car = Car.query.get(car_id)
+            if car:
+                car.available = "true"
+                db.session.commit()
+                print(f"Car ID {car_id} is now available.")
+    timer = threading.Timer(delay, update_availability)
+    timer.start()
+
+
 
 
 @app.route("/reservation", methods=["POST"])
@@ -317,30 +341,31 @@ def make_reservation():
         return jsonify({"error": "Internal Server Error"}), 500
 
 
+@app.route("/getreservation", methods=["GET"])
+@jwt_required()
+def get_reservations():
+    try:
+        current_user_id = get_jwt_identity()["id"]
+        current_user = User.query.get(current_user_id)
 
-def set_car_unavailable_later(car_id, delay):
-    def update_availability():
-        with app.app_context():
-            car = Car.query.get(car_id)
-            if car:
-                car.available = "false"
-                db.session.commit()
-                print(f"Car ID {car_id} is now unavailable.")
-    timer = threading.Timer(delay, update_availability)
-    timer.start()
+        print(f"Current User ID: {current_user_id}")
+        print(f"Current User: {current_user}")
 
+        if not current_user:
+            return jsonify({"error": "User not found"}), 404
 
-def set_car_available_later(car_id, delay):
-    def update_availability():
-        with app.app_context():
-            car = Car.query.get(car_id)
-            if car:
-                car.available = "true"
-                db.session.commit()
-                print(f"Car ID {car_id} is now available.")
-    timer = threading.Timer(delay, update_availability)
-    timer.start()
+        if current_user.username == "admin":
+            reservations = Reservation.query.all()
+        else:
+            reservations = Reservation.query.filter_by(user_id=current_user_id).all()
 
+        print(f"Reservations: {reservations}")
+
+        reservations_data = [reservation.to_json_reservation() for reservation in reservations]
+        return jsonify({"reservations": reservations_data}), 200
+    except Exception as e:
+        print("Error in get_reservations:", str(e))
+        return jsonify({"error": "Internal Server Error"}), 500
 
 
 
