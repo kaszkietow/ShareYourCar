@@ -17,13 +17,12 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = 3600
 jwt = JWTManager(app)
 app.config["JWT_VERIFY_SUB"] = False
 
-# Get all cars
 @app.route("/api/cars", methods=["GET"])
 @jwt_required()
 def get_cars():
     try:
-        cars = Car.query.all()  # Pobierz wszystkie samochody z bazy danych
-        cars_json = [car.to_json_car_with_owner() for car in cars]  # Serializuj samochody
+        cars = Car.query.all()
+        cars_json = [car.to_json_car_with_owner() for car in cars]
         return jsonify(cars_json), 200
     except Exception as e:
         print(f"Error fetching cars: {e}")
@@ -36,7 +35,7 @@ def get_cars():
 def create_car():
     try:
         data = request.json
-        print(f"Received data: {data}")  # Logowanie danych wejściowych
+        print(f"Received data: {data}")
         required_fields = ["model", "description", "available", "img_url", "price"]
         for field in required_fields:
             if field not in data or not data.get(field):
@@ -59,7 +58,7 @@ def create_car():
         return jsonify(new_car.to_json_car_with_owner()), 200
     except Exception as e:
         db.session.rollback()
-        print(f"Error: {e}")  # Logowanie błędów
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -115,7 +114,6 @@ def register_user():
     try:
         data = request.get_json()
 
-        # Walidacja wymaganych pól
         required_fields = ["username", "password", "gender"]
         for field in required_fields:
             if field not in data:
@@ -125,29 +123,23 @@ def register_user():
         password = data.get("password")
         gender = data.get("gender")
 
-        # Walidacja długości nazwy użytkownika
         if not username or len(username.strip()) < 3:
             return jsonify({"error": "Username must be at least 3 characters long"}), 400
 
-        # Walidacja hasła
         if not password or len(password) < 6:
             return jsonify({"error": "Password must be at least 6 characters long"}), 400
 
-        # Walidacja płci
         if gender not in ["male", "female"]:
             return jsonify({"error": "Gender must be either 'male' or 'female'"}), 400
 
-        # Sprawdzenie, czy użytkownik już istnieje
         if User.query.filter_by(username=username).first():
             return jsonify({"error": "Username already exists"}), 400
 
-        # Generowanie URL avatara na podstawie płci
         if gender == "male":
             img_url = f"https://avatar.iran.liara.run/public/boy?username={username}"
         else:
             img_url = f"https://avatar.iran.liara.run/public/girl?username={username}"
 
-        # Tworzenie nowego użytkownika
         new_user = User(username=username, password=password, gender=gender, img_url=img_url)
         db.session.add(new_user)
         db.session.commit()
@@ -198,20 +190,15 @@ def update_user(id):
 @app.route("/login", methods=["POST"])
 def login_user():
     try:
-        # Pobierz dane logowania z żądania
         data = request.get_json()
         username = data.get("username")
         password = data.get("password")
 
-        # Znajdź użytkownika w bazie danych
         user = User.query.filter_by(username=username).first()
 
-        # Sprawdź poprawność hasła (uwaga: lepiej użyć hashowania, np. bcrypt)
         if user and user.password == password:
-            # Tworzenie tokena z identyfikatorem użytkownika
             access_token = create_access_token(identity={"id": user.id, "username": user.username})
 
-            # Zwróć token w odpowiedzi
             return jsonify({"access_token": access_token}), 200
 
         return jsonify({"error": "Invalid username or password."}), 401
@@ -226,7 +213,7 @@ blacklist = set()
 @app.route("/logout", methods=["POST"])
 @jwt_required()
 def logout_user():
-    jti = get_jwt()["jti"]  # JTI to unikalny identyfikator tokena
+    jti = get_jwt()["jti"]
     blacklist.add(jti)
     return jsonify({"message": "Logged out successfully"}), 200
 
@@ -241,17 +228,14 @@ def check_if_token_is_revoked(jwt_header, jwt_payload):
 @jwt_required()
 def get_current_user():
     try:
-        # Pobierz cały obiekt `sub` z tokena
         user_identity = get_jwt_identity()
         user_id = user_identity["id"]
 
-        # Dynamicznie pobierz użytkownika i powiązane dane z bazy
         user = User.query.get(user_id)
 
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        # Serializacja użytkownika z samochodami
         user_json = user.to_json_user()
         return jsonify(user_json), 200
     except Exception as e:
@@ -283,8 +267,6 @@ def set_car_available_later(car_id, delay):
     timer.start()
 
 
-
-
 @app.route("/reservation", methods=["POST"])
 @jwt_required()
 def make_reservation():
@@ -303,17 +285,15 @@ def make_reservation():
         if not car or not car.available:
             return jsonify({"error": "Car not available"}), 400
 
-        # Sprawdzanie konfliktu rezerwacji
         conflicting_reservations = Reservation.query.filter(
             Reservation.car_id == car_id,
-            Reservation.return_date > reservation_date,  # Sprawdź, czy rezerwacja kończy się po rozpoczęciu nowej
-            Reservation.reservation_date < return_date  # Sprawdź, czy rezerwacja zaczyna się przed końcem nowej
+            Reservation.return_date > reservation_date,
+            Reservation.reservation_date < return_date
         ).all()
 
         if conflicting_reservations:
             return jsonify({"error": "Car is already reserved during this time"}), 400
 
-        # Tworzenie rezerwacji
         reservation = Reservation(
             car_id=car_id,
             user_id=user_id,
@@ -323,7 +303,6 @@ def make_reservation():
         db.session.add(reservation)
         db.session.commit()
 
-        # Zaplanuj ustawienie dostępności
         delay_to_start = (reservation_date - datetime.now(ZoneInfo("Europe/Warsaw"))).total_seconds()
         delay_to_end = (return_date - datetime.now(ZoneInfo("Europe/Warsaw"))).total_seconds()
 
